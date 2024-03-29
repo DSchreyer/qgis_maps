@@ -5,14 +5,16 @@ import os
 # Get the current QGIS project
 project = QgsProject.instance()
 
-# Get all layers
 layers = project.mapLayers().values()
 
 # Set the desired DPI (dots per inch)
 desired_dpi = 300
 
 # Create the output folder if it doesn't exist
-output_folder = os.path.join(os.path.dirname(__file__), 'qgis_output')
+project_folder = QgsProject.instance().homePath()
+output_folder = os.path.join(project_folder, 'qgis_output')
+
+output_folder = os.path.join(output_folder, 'qgis_output')
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
 
@@ -28,8 +30,8 @@ for layer in layers:
     settings.setExtent(canvas.extent())
     settings.setDestinationCrs(project.crs())
 
-    new_width = int(160 * desired_dpi)
-    new_height = int(90 * desired_dpi)
+    new_width = int(3508)
+    new_height = int(2480)
 
     settings.setOutputSize(QSize(new_width, new_height))
 
