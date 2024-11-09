@@ -13,12 +13,18 @@ INPUT_FOLDER="$1"
 BMP_OUTPUT_FOLDER="${INPUT_FOLDER}/bmp_output"
 SVG_OUTPUT_FOLDER="${INPUT_FOLDER}/svg_output"
 
+rm "${INPUT_FOLDER}/OSM Standard.png"
+rm -rf "${INPUT_FOLDER}/svg_output"
+rm -rf "${INPUT_FOLDER}/bmp_output"
+rm ${SVG_OUTPUT_FOLDER}/stack/layer_stack.svg
+
 # Create output directories if they don't exist
 mkdir -p "${BMP_OUTPUT_FOLDER}"
 mkdir -p "${SVG_OUTPUT_FOLDER}"
 
+
 # Convert all PNG files in the input directory
-for png_file in "${INPUT_FOLDER}"/*.png; do
+for png_file in ${INPUT_FOLDER}/*.png; do
     if [ -f "$png_file" ]; then
         # Extract filename without extension
         filename=$(basename -- "$png_file")

@@ -1,39 +1,33 @@
 from qgis.core import QgsProject, QgsMapSettings, QgsMapRendererParallelJob
-from PyQt5.QtCore import QSize
 import os
+
+dpi = 3.8
 
 # Get the current QGIS project
 project = QgsProject.instance()
 
 layers = project.mapLayers().values()
 
-# Set the desired DPI (dots per inch)
-desired_dpi = 300
-
 # Create the output folder if it doesn't exist
 project_folder = QgsProject.instance().homePath()
 output_folder = os.path.join(project_folder, 'qgis_output')
 
-output_folder = os.path.join(output_folder, 'qgis_output')
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
 
 # Get the canvas
 canvas = iface.mapCanvas()
 
+
 # Loop through each layer and export as PNG
 for layer in layers:
     settings = QgsMapSettings()
     settings.setLayers([layer])
+    settings.setOutputSize(canvas.size())
     settings.setBackgroundColor(Qt.white)
-    settings.setOutputSize(QSize(canvas.width(), canvas.height()))
+    settings.setOutputSize(QSize(canvas.width()*dpi, canvas.height()*dpi))
     settings.setExtent(canvas.extent())
     settings.setDestinationCrs(project.crs())
-
-    new_width = int(3508)
-    new_height = int(2480)
-
-    settings.setOutputSize(QSize(new_width, new_height))
 
     # Create a job with the map settings and output file path
     job = QgsMapRendererParallelJob(settings)
