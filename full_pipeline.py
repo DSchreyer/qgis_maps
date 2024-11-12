@@ -1,24 +1,27 @@
 from qgis.core import QgsProject, QgsMapSettings, QgsMapRendererParallelJob
 import os
 from qgis.core import QgsSymbolLayer
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 import shutil
 import subprocess
 import glob
 from svgutils.compose import Figure, SVG
 from svgutils.transform import SVGFigure
+from combine_svg_paths import process_folder as combine_svg_paths
+from merge_svgs import merge_svgs
 
-# 1:72379 - 9 7 6 1 1 0 0 0 
-# 1:50000 - 7.5 5.8 0.8 0.8 0 0
-# 1:25000 - 5 4 0.6 0.6 0 0 
+# 
+# Keep sizes constant - Width Factor around 0.66 -> 12 - 11 - 8 
+# Largest upper street starts at 12 - Small size difference between motorway and primary street when secondary is shown
+# Smalles upper street starts at 8
 
-motorway_width = 11
-primary_width = 8
-secondary_width = 0
+motorway_width = 10
+primary_width = 8.4
+secondary_width = 6.6
 streets_width = 1
-water_width = 0
+water_width = 3
 stream_width = 0
-river_width = 0
+river_width = 3
 canal_width = 0
 island_width = 0
 coastline_width = 0
@@ -166,46 +169,42 @@ for png_file in os.listdir(output_folder):
         bmp_file_path = os.path.join(bmp_output_folder, f"{filename}.bmp")
         svg_file_path = os.path.join(svg_output_folder, f"{filename}.svg")
 
-        # Convert PNG to BMP
-        subprocess.run(['/opt/homebrew/bin/convert', png_file_path, bmp_file_path])
+        try:
+            # Convert PNG to BMP
+            print(f"Converting {png_file_path} to {bmp_file_path}")
+            subprocess.run(['/opt/homebrew/bin/convert', png_file_path, bmp_file_path], check=True)
 
-        # Trace BMP to SVG with Potrace
-        subprocess.run(['/opt/homebrew/bin/potrace', '-b', 'svg', '-a', '0', '-t', '0', bmp_file_path, '-o', svg_file_path])
+            # Trace BMP to SVG with Potrace
+            print(f"Tracing {bmp_file_path} to {svg_file_path}")
+            subprocess.run(['/opt/homebrew/bin/potrace', '-b', 'svg', '-a', '0', '-t', '0', bmp_file_path, '-o', svg_file_path], check=True)
 
-        print(f"Processed: {png_file_path}")
+            print(f"Processed: {png_file_path}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error processing {png_file_path}: {e}")
 
 print("PNG to BMP and SVG conversion completed.")
 
-# Generate svg stack
-stack_folder = os.path.join(svg_output_folder, 'stack')
-os.makedirs(stack_folder, exist_ok=True)
-stack_svg_path = os.path.join(stack_folder, 'layer_stack.svg')
+print("Combine SVG paths...")
 
-def merge_svgs(svg_folder, output_file):
-    print(f"Merging SVG files from folder: {svg_folder}")
-    # Get a list of all SVG files in the folder
-    svg_files = glob.glob(f"{svg_folder}/*.svg")
+combine_folder = os.path.join(output_folder, 'combined')
 
-    # Load all SVG files into SVG objects
-    svgs = [SVG(svg_file) for svg_file in svg_files]
-
-    # Create a new SVG figure with the size of the first SVG (assuming all SVGs have the same size)
-    if svgs:
-        first_svg = svgs[0]
-        fig = SVGFigure(first_svg.width, first_svg.height)
-
-        # Merge the SVG objects into the new figure
-        for svg in svgs:
-            fig.append(svg)
-
-        # Save the merged SVG figure to the output file
-        fig.save(output_file, encoding="utf-8")
-        print(f"Merged SVG saved to: {output_file}")
-    else:
-        print("No SVG files found to merge.")
+try:
+    # Directly call the process_folder function from combine_svg_paths.py
+    combine_svg_paths(svg_output_folder, combine_folder)
+except Exception as e:
+    print(f"Error combining SVG paths: {e}")
 
 print("Starting SVG merge...")
 
-merge_svgs(svg_output_folder, stack_svg_path)
+# Generate svg stack
+stack_folder = os.path.join(output_folder, 'stack')
+os.makedirs(stack_folder, exist_ok=True)
+stack_svg_path = os.path.join(stack_folder, 'layer_stack.svg')
 
-print("Merged svg files.")
+try:
+    merge_svgs(combine_folder, stack_svg_path)
+    print("Merged svg files.")
+except Exception as e:
+    print(f"Error merging SVG files: {e}")
+
+print("Finished processing SVG files.")

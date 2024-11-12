@@ -23,16 +23,15 @@ def merge_svgs(svg_folder, output_file):
     for svg in svgs:
         fig.append(svg)
 
+    # Calculate the translation needed to center the SVGs after scaling
+    translate_x = total_width / 4
+    translate_y = total_height / 4
+
+    # Apply a 180-degree rotation and scaling transformation to the entire figure, and center it
+    fig.root.set("transform", "scale(0.15, -0.15)")
+
     # Save the merged SVG figure to the output file
-    fig.save(args.output_file, encoding="utf-8")  # Set encoding to "utf-8"
-
-    # Clear the list of SVG objects
-    svgs = []
-    for svg_file in svg_files:
-        if svg_file.endswith('.svg'):
-            svgs.append(SVG(svg_file))
-
-    # Calculate the total width and height of the merged SVG
+    fig.save(output_file, encoding="utf-8")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Merge SVG files")
